@@ -33,9 +33,8 @@
     "@angular/forms": "^2.4.3",
     "@angular/platform-browser": "^2.4.3",
     "@angular/platform-browser-dynamic": "^2.4.3",
-
     "@types/node": "^7.0.0",
-    "bootstrap": "^3.3.7",
+    "bootstrap": "^4.0.0-alpha.6",
     "chai": "^3.4.1",
     "del": "^2.2.2",
     "es6-shim": "^0.35.2",
