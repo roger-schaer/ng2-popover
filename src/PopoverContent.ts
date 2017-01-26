@@ -1,5 +1,6 @@
 import {Component, Input, AfterViewInit, ElementRef, ChangeDetectorRef, OnDestroy, ViewChild, EventEmitter, Renderer } from "@angular/core";
 import {Popover} from "./Popover";
+import {getHtmlTagDefinition} from "@angular/compiler/src/ml_parser/html_tags";
 
 @Component({
     selector: "popover-content",
@@ -43,7 +44,7 @@ import {Popover} from "./Popover";
 export class PopoverContent implements AfterViewInit, OnDestroy {
 
     // -------------------------------------------------------------------------
-    // Inputs / Outputs 
+    // Inputs / Outputs
     // -------------------------------------------------------------------------
 
     // @Input()
@@ -83,7 +84,7 @@ export class PopoverContent implements AfterViewInit, OnDestroy {
     effectivePlacement: string;
 
     // -------------------------------------------------------------------------
-    // Anonymous 
+    // Anonymous
     // -------------------------------------------------------------------------
 
     /**
@@ -114,9 +115,9 @@ export class PopoverContent implements AfterViewInit, OnDestroy {
     listenMouseFunc: any;
     ngAfterViewInit(): void {
         if (this.closeOnClickOutside)
-            this.listenClickFunc = this.renderer.listenGlobal("document", "mousedown", (event: any) => this.onDocumentMouseDown(event));               
+            this.listenClickFunc = this.renderer.listenGlobal("document", "mousedown", (event: any) => this.onDocumentMouseDown(event));
         if (this.closeOnMouseOutside)
-            this.listenMouseFunc = this.renderer.listenGlobal("document", "mouseover", (event: any) => this.onDocumentMouseDown(event));  
+            this.listenMouseFunc = this.renderer.listenGlobal("document", "mouseover", (event: any) => this.onDocumentMouseDown(event));
 
         this.show();
         this.cdr.detectChanges();
@@ -171,6 +172,8 @@ export class PopoverContent implements AfterViewInit, OnDestroy {
 
         this.effectivePlacement = pos0 = this.getEffectivePlacement(pos0, hostEl, targetEl);
 
+        this.updatePlacement(this.effectivePlacement, hostEl, targetEl.getBoundingClientRect());
+
         let shiftWidth: any = {
             center: function (): number {
                 return hostElPos.left + hostElPos.width / 2 - targetElWidth / 2;
@@ -196,11 +199,11 @@ export class PopoverContent implements AfterViewInit, OnDestroy {
         };
 
         let targetElPos: { top: number, left: number };
-        switch (pos0) {
+        switch (this.effectivePlacement) {
             case "right":
                 targetElPos = {
                     top: shiftHeight[pos1](),
-                    left: shiftWidth[pos0]()
+                    left: shiftWidth[this.effectivePlacement]()
                 };
                 break;
 
@@ -213,7 +216,7 @@ export class PopoverContent implements AfterViewInit, OnDestroy {
 
             case "bottom":
                 targetElPos = {
-                    top: shiftHeight[pos0](),
+                    top: shiftHeight[this.effectivePlacement](),
                     left: shiftWidth[pos1]()
                 };
                 break;
@@ -226,7 +229,40 @@ export class PopoverContent implements AfterViewInit, OnDestroy {
                 break;
         }
 
+        targetElPos.left = targetElPos.left >= 0 ? targetElPos.left : 11;
+        targetElPos.top = targetElPos.top >= 0 ? targetElPos.top : 11;
+
         return targetElPos;
+    }
+
+    protected updatePlacement(placement: string, hostEl: HTMLElement, targetElBoundingRect: ClientRect) {
+        let hostElBoundingRect: ClientRect = hostEl.getBoundingClientRect();
+        let hostElOffsetParent: Element = hostEl.offsetParent;
+        let hostElOffsetParentHeight: number = hostElOffsetParent.scrollHeight;
+
+        switch (placement) {
+            case "left":
+                if (targetElBoundingRect.width > hostElBoundingRect.left && targetElBoundingRect.width <= hostElBoundingRect.right) {
+                   this.effectivePlacement = "right";
+                }
+                break;
+            case "right":
+                if (targetElBoundingRect.width > hostElBoundingRect.right && targetElBoundingRect.width <= hostElBoundingRect.left) {
+                    this.effectivePlacement = "left";
+                }
+                break;
+            case "top":
+                if (targetElBoundingRect.height > hostElBoundingRect.top && targetElBoundingRect.height <= hostElBoundingRect.bottom) {
+                    this.effectivePlacement = "bottom";
+                }
+                break;
+            case "bottom":
+                if (targetElBoundingRect.height > hostElOffsetParentHeight && targetElBoundingRect.height <= hostElBoundingRect.top) {
+                    this.effectivePlacement = "top";
+                }
+                break;
+        }
+
     }
 
     protected position(nativeEl: HTMLElement): { width: number, height: number, top: number, left: number } {
