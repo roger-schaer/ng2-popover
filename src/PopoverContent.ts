@@ -1,5 +1,6 @@
 import {Component, Input, AfterViewInit, ElementRef, ChangeDetectorRef, OnDestroy, ViewChild, EventEmitter, Renderer } from "@angular/core";
 import {Popover} from "./Popover";
+import { document } from "@angular/platform-browser/src/facade/browser";
 
 @Component({
     selector: "popover-content",
@@ -43,7 +44,7 @@ import {Popover} from "./Popover";
 export class PopoverContent implements AfterViewInit, OnDestroy {
 
     // -------------------------------------------------------------------------
-    // Inputs / Outputs 
+    // Inputs / Outputs
     // -------------------------------------------------------------------------
 
     // @Input()
@@ -83,7 +84,7 @@ export class PopoverContent implements AfterViewInit, OnDestroy {
     effectivePlacement: string;
 
     // -------------------------------------------------------------------------
-    // Anonymous 
+    // Anonymous
     // -------------------------------------------------------------------------
 
     /**
@@ -114,9 +115,9 @@ export class PopoverContent implements AfterViewInit, OnDestroy {
     listenMouseFunc: any;
     ngAfterViewInit(): void {
         if (this.closeOnClickOutside)
-            this.listenClickFunc = this.renderer.listenGlobal("document", "mousedown", (event: any) => this.onDocumentMouseDown(event));               
+            this.listenClickFunc = this.renderer.listenGlobal("document", "mousedown", (event: any) => this.onDocumentMouseDown(event));
         if (this.closeOnMouseOutside)
-            this.listenMouseFunc = this.renderer.listenGlobal("document", "mouseover", (event: any) => this.onDocumentMouseDown(event));  
+            this.listenMouseFunc = this.renderer.listenGlobal("document", "mouseover", (event: any) => this.onDocumentMouseDown(event));
 
         this.show();
         this.cdr.detectChanges();
@@ -169,11 +170,14 @@ export class PopoverContent implements AfterViewInit, OnDestroy {
         let targetElWidth = targetEl.offsetWidth;
         let targetElHeight = targetEl.offsetHeight;
 
+        let windowHeight = window.innerHeight;
+        let bodyHeight = window.document.body.clientHeight;
+
         this.effectivePlacement = pos0 = this.getEffectivePlacement(pos0, hostEl, targetEl);
 
         let shiftWidth: any = {
             center: function (): number {
-                return hostElPos.left + hostElPos.width / 2 - targetElWidth / 2;
+                return hostElPos.left// + hostElPos.width / 2 - targetElWidth / 2;
             },
             left: function (): number {
                 return hostElPos.left;
@@ -183,9 +187,33 @@ export class PopoverContent implements AfterViewInit, OnDestroy {
             }
         };
 
+        //var offsetHostEl = this.offset(hostEl);
+        var centerOfHostEl = hostElPos.top + (hostElPos.height / 2) - (window.pageYOffset || window.document.body.scrollTop);
+        var centerOfTargetEl: number;
+
+        var topOfTargetElement = centerOfHostEl - (targetElHeight / 2);
+        var bottomOfTargetElement =  centerOfHostEl + (targetElHeight / 2);
+
+        centerOfTargetEl = centerOfHostEl - targetElHeight / 2 + (window.pageYOffset || window.document.body.scrollTop);
+
+        var offset: number = 0;
+
+        if(topOfTargetElement < 0){
+          offset = topOfTargetElement;
+          centerOfTargetEl = centerOfHostEl - targetElHeight / 2 + (window.pageYOffset || window.document.body.scrollTop) - offset;
+        } else if(bottomOfTargetElement > windowHeight){
+          offset = (bottomOfTargetElement - windowHeight);
+          centerOfTargetEl = centerOfHostEl - targetElHeight / 2 + (window.pageYOffset || window.document.body.scrollTop) - offset;
+        }
+
+        console.log("offset by " + offset);
+
+        var arrowElement: HTMLElement = <HTMLElement> targetEl.getElementsByClassName("arrow")[0];
+        arrowElement.style.marginTop = offset - (arrowElement.offsetHeight / 2) + "px";
+
         let shiftHeight: any = {
             center: function (): number {
-                return hostElPos.top + hostElPos.height / 2 - targetElHeight / 2;
+                return centerOfTargetEl;
             },
             top: function (): number {
                 return hostElPos.top;
@@ -250,6 +278,7 @@ export class PopoverContent implements AfterViewInit, OnDestroy {
 
     protected offset(nativeEl: any): { width: number, height: number, top: number, left: number } {
         const boundingClientRect = nativeEl.getBoundingClientRect();
+
         return {
             width: boundingClientRect.width || nativeEl.offsetWidth,
             height: boundingClientRect.height || nativeEl.offsetHeight,

@@ -154,7 +154,9 @@ export class Popover implements OnChanges {
             // if dismissTimeout option is set, then this popover will be dismissed in dismissTimeout time
             if (this.popoverDismissTimeout > 0)
                 setTimeout(() => this.hide(), this.popoverDismissTimeout);
-            popover.show();
+
+            // delay showing the timeout to correctly position it
+            setTimeout(() => popover.show(), 1);
         }
 
         this.onShown.emit(this);
