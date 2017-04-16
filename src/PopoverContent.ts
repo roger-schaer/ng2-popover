@@ -1,6 +1,5 @@
 import {Component, Input, AfterViewInit, ElementRef, ChangeDetectorRef, OnDestroy, ViewChild, EventEmitter, Renderer } from "@angular/core";
 import {Popover} from "./Popover";
-import { document } from "@angular/platform-browser/src/facade/browser";
 
 @Component({
     selector: "popover-content",
@@ -15,6 +14,7 @@ import { document } from "@angular/platform-browser/src/facade/browser";
     <div [hidden]="!closeOnMouseOutside" class="virtual-area"></div>
     <div class="arrow"></div> 
     <h3 class="popover-title" [hidden]="!title">{{ title }}</h3>
+    <div class="close" (click)="hideFromPopover()"><i class="fa fa-times"></i></div>
     <div class="popover-content">
         <ng-content></ng-content>
         {{ content }}
@@ -38,6 +38,11 @@ import { document } from "@angular/platform-browser/src/facade/browser";
 }
 .popover.right .virtual-area {
     left: -11px; 
+}
+.popover .close {
+  position: absolute;
+  top: 3px;
+  right: 5px;
 }
 `]
 })
